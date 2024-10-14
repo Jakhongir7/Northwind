@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Northwind.Data;
 using Northwind.Models;
 using System.Linq;
@@ -8,10 +9,12 @@ using System.Linq;
 public class ProductController : Controller
 {
     private readonly NorthwindContext _context;
+    private readonly int _maxProducts;
 
-    public ProductController(NorthwindContext context)
+    public ProductController(NorthwindContext context, IOptions<ProductSettings> productSettings)
     {
         _context = context;
+        _maxProducts = productSettings.Value.MaxProducts;
     }
 
     public IActionResult Index()
@@ -19,9 +22,15 @@ public class ProductController : Controller
         var products = _context.Products
             .Include(p => p.Category)
             .Include(p => p.Supplier)
-            .ToList();
+            .AsQueryable();
 
-        return View(products);
+        // Apply max product limit if configured
+        if (_maxProducts > 0)
+        {
+            products = products.Take(_maxProducts);
+        }
+
+        return View(products.ToList());
     }
 
     public IActionResult Create()
