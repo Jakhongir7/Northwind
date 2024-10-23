@@ -7,7 +7,20 @@
     {
         <li class="list-group-item">
             <strong>Category ID:</strong> @category.CategoryID <br />
-            <strong>Category Name:</strong> @category.CategoryName
+            <strong>Category Name:</strong> @category.CategoryName <br />
+            @if (category.Picture != null)
+            {
+                <a href="@Url.Action("GetCategoryImage", "Category", new { id = category.CategoryID })" target="_blank">
+                    <img src="@Url.Action("GetCategoryImage", "Category", new { id = category.CategoryID })"
+                         alt="@category.CategoryName" width="100" height="100" />
+                </a>
+            }
+            else
+            {
+                <p>No image available</p>
+            }
+            <br />
+            <a href="@Url.Action("Edit", "Category", new { id = category.CategoryID })">Edit Image</a>
         </li>
     }
 </ul>

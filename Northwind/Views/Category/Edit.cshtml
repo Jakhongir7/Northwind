@@ -1,0 +1,16 @@
+﻿@model Category
+
+<h2>Edit Category Image</h2>
+
+<form asp-action="Edit" asp-controller="Category" method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="categoryName">Category Name: @Model.CategoryName</label>
+    </div>
+    <div class="form-group">
+        <label for="newImage">Upload New Image:</label>
+        <input type="file" name="newImage" id="newImage" class="form-control" />
+    </div>
+    <br />
+    <button type="submit" class="btn btn-primary">Update Image</button>
+    <a href="@Url.Action("Index", "Category")" class="btn btn-secondary">Cancel</a>
+</form>

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Northwind.Data;
+using Northwind.Filters;
+using Northwind.Middleware;
 using Northwind.Models;
 using Serilog;
 
@@ -20,10 +22,21 @@ builder.Services.AddDbContext<NorthwindContext>(options =>
 // Register configuration section for product settings
 builder.Services.Configure<ProductSettings>(builder.Configuration.GetSection("ProductSettings"));
 
+// Register the logging filter
+builder.Services.AddScoped<LoggingActionFilter>(provider =>
+    new LoggingActionFilter(provider.GetRequiredService<ILogger<LoggingActionFilter>>(), logParameters: false));
+
+// Add MVC services
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<LoggingActionFilter>(); // Add the filter globally
+});
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
+var env = builder.Environment;
 
 // Log application startup
 Log.Information("Application started. Location: {Location}", AppContext.BaseDirectory);
@@ -43,12 +56,31 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-app.UseRouting();
+// Configure the ImageCachingMiddleware options
+var imageCacheOptions = new ImageCachingOptions
+{
+    CacheDirectory = Path.Combine(env.WebRootPath, "ImageCache"),
+    MaxCachedImages = 50, // Set your max cached images count
+    CacheExpiration = TimeSpan.FromMinutes(10) // Set your expiration time
+};
 
+// Add the custom middleware
+app.UseMiddleware<ImageCachingMiddleware>(imageCacheOptions);
+
+app.UseRouting();
 app.UseAuthorization();
+app.UseEndpoints(endpoints =>
+{
+    // Default route configuration
+    endpoints.MapControllerRoute(
+        name: "default",
+        pattern: "{controller=Home}/{action=Index}/{id?}"
+    );
+});
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
 
 app.Run();

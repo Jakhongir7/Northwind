@@ -5,9 +5,9 @@ namespace Northwind.Data
 {
     public class NorthwindContext : DbContext
     {
-        public DbSet<Product> Products { get; set; }
-        public DbSet<Supplier> Suppliers { get; set; }
-        public DbSet<Category> Categories { get; set; }
+        public virtual DbSet<Product> Products { get; set; }
+        public virtual DbSet<Supplier> Suppliers { get; set; }
+        public virtual DbSet<Category> Categories { get; set; }
 
         public NorthwindContext(DbContextOptions<NorthwindContext> options) : base(options)
         {

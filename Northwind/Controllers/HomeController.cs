@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Northwind.Models;
+using Northwind.Models.Attributes;
 using System.Diagnostics;
 
 namespace Northwind.Controllers
@@ -13,11 +14,13 @@ namespace Northwind.Controllers
             _logger = logger;
         }
 
+        [LogParameters(true)]
         public IActionResult Index()
         {
             return View();
         }
 
+        [LogParameters(true)]
         public IActionResult Privacy()
         {
             return View();
