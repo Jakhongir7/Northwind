@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Northwind.Data;
-using Northwind.Filters;
+using Northwind.Infrastructure.Filters;
 using Northwind.Middleware;
 using Northwind.Models;
 using Serilog;
@@ -27,13 +27,10 @@ builder.Services.AddScoped<LoggingActionFilter>(provider =>
     new LoggingActionFilter(provider.GetRequiredService<ILogger<LoggingActionFilter>>(), logParameters: false));
 
 // Add MVC services
-builder.Services.AddControllers(options =>
+builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<LoggingActionFilter>(); // Add the filter globally
 });
-
-// Add services to the container.
-builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 var env = builder.Environment;
@@ -65,7 +62,7 @@ var imageCacheOptions = new ImageCachingOptions
 };
 
 // Add the custom middleware
-app.UseMiddleware<ImageCachingMiddleware>(imageCacheOptions);
+//app.UseMiddleware<ImageCachingMiddleware>(imageCacheOptions);
 
 app.UseRouting();
 app.UseAuthorization();

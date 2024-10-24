@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Northwind.Data;
+using Northwind.Infrastructure.Attributes;
 
 namespace Northwind.Controllers
 {
@@ -12,6 +13,7 @@ namespace Northwind.Controllers
             _context = context;
         }
 
+        [LogParameters(true)]
         public IActionResult Index()
         {
             var categories = _context.Categories.ToList();
@@ -20,6 +22,7 @@ namespace Northwind.Controllers
 
         // New Action to return category image
         [Route("images/{id}")]
+        [LogParameters(true)]
         public IActionResult GetCategoryImage(int id)
         {
             var category = _context.Categories.FirstOrDefault(c => c.CategoryID == id);
@@ -29,8 +32,8 @@ namespace Northwind.Controllers
                 return NotFound();
             }
 
-            var mimeType = "image/jpeg"; // Default to JPEG
-            var imageBytes = category.Picture;
+            byte[] imageBytes = category.Picture;
+            string mimeType = "image/jpeg"; // Default to JPEG
 
             // If you know the images are BMP, skip the first 78 bytes
             if (category.Picture.Length > 78 && IsBmp(category.Picture.Skip(78).ToArray()))
@@ -42,13 +45,8 @@ namespace Northwind.Controllers
             return File(imageBytes, mimeType);
         }
 
-        private bool IsBmp(byte[] bytes)
-        {
-            // Check BMP header (first two bytes are 'BM')
-            return bytes.Length >= 2 && bytes[0] == 0x42 && bytes[1] == 0x4D;
-        }
-
         // GET: Edit category image
+        [LogParameters(true)]
         public IActionResult Edit(int id)
         {
             var category = _context.Categories.FirstOrDefault(c => c.CategoryID == id);
@@ -63,6 +61,7 @@ namespace Northwind.Controllers
 
         // POST: Update category image
         [HttpPost]
+        [LogParameters(true)]
         public IActionResult Edit(int id, IFormFile newImage)
         {
             var category = _context.Categories.FirstOrDefault(c => c.CategoryID == id);
@@ -85,6 +84,12 @@ namespace Northwind.Controllers
             }
 
             return RedirectToAction("Index");
+        }
+
+        private static bool IsBmp(byte[] bytes)
+        {
+            // Check BMP header (first two bytes are 'BM')
+            return bytes.Length >= 2 && bytes[0] == 0x42 && bytes[1] == 0x4D;
         }
     }
 }

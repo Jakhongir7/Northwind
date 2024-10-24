@@ -26,6 +26,9 @@ namespace Northwind.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
+            // Log that the middleware is processing a request
+            _logger.LogInformation("Processing request for path: {Path}", context.Request.Path);
+
             // Check if the request is for an image that might already be cached
             if (TryGetCachedImage(context, out var cachedFilePath))
             {
@@ -41,6 +44,9 @@ namespace Northwind.Middleware
             context.Response.Body = memoryStream;
 
             await _next(context);
+
+            // Log the content type
+            _logger.LogInformation("Response Content-Type: {ContentType}", context.Response.ContentType);
 
             // Restore original stream
             memoryStream.Position = 0;

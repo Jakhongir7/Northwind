@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Northwind.Data;
+using Northwind.Infrastructure.Attributes;
 
 namespace Northwind.Controllers
 {
@@ -12,6 +13,7 @@ namespace Northwind.Controllers
             _context = context;
         }
 
+        [LogParameters(true)]
         public IActionResult Index()
         {
             var categories = _context.Suppliers.ToList();

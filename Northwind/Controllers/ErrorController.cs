@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Northwind.Models;
-using Northwind.Models.Attributes;
-using Serilog;
+using Northwind.Infrastructure.Attributes;
 using System.Diagnostics;
 
 namespace Northwind.Controllers

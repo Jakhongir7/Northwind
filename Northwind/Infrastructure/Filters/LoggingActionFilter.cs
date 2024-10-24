@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
-using Northwind.Models.Attributes;
+using Northwind.Infrastructure.Attributes;
 
-namespace Northwind.Filters
+namespace Northwind.Infrastructure.Filters
 {
     public class LoggingActionFilter : IAsyncActionFilter
     {
@@ -27,21 +27,24 @@ namespace Northwind.Filters
 
             // Log the action start
             var actionName = actionDescriptor.DisplayName;
-            _logger.LogInformation($"Starting action: {actionName}");
+            _logger.LogInformation("Starting action: {ActionName}", actionName);
 
             // Log parameters if enabled
             if (shouldLogParameters)
             {
-                var parameters = context.ActionArguments;
-                _logger.LogInformation($"Parameters: {string.Join(", ", parameters)}");
+                foreach (var (key, value) in context.ActionArguments)
+                {
+                    // Serialize complex objects to JSON for better readability
+                    var serializedValue = value != null ? System.Text.Json.JsonSerializer.Serialize(value) : "null";
+                    _logger.LogInformation("Parameter: {ParameterName} = {ParameterValue}", key, serializedValue);
+                }
             }
 
             // Proceed to the next action filter or action method
-            var resultContext = await next();
+            await next();
 
             // Log the action end
-            _logger.LogInformation($"Finished action: {actionName}");
+            _logger.LogInformation("Finished action: {ActionName}", actionName);
         }
-
     }
 }

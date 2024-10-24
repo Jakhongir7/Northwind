@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Northwind.Models;
-using Northwind.Models.Attributes;
-using System.Diagnostics;
+using Northwind.Infrastructure.Attributes;
 
 namespace Northwind.Controllers
 {

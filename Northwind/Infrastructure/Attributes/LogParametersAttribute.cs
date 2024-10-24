@@ -1,4 +1,4 @@
-﻿namespace Northwind.Models.Attributes
+﻿namespace Northwind.Infrastructure.Attributes
 {
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
     public class LogParametersAttribute : Attribute

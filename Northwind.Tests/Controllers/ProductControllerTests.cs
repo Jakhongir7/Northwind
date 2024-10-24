@@ -17,9 +17,13 @@ namespace Northwind.Tests.Controllers
     {
         private Mock<NorthwindContext> _mockContext;
         private Mock<DbSet<Product>> _mockProducts;
+        private Mock<DbSet<Category>> _mockCategories;
+        private Mock<DbSet<Supplier>> _mockSuppliers;
         private Mock<IOptions<ProductSettings>> _mockSettings;
         private ProductController _controller;
         private List<Product> _productData;
+        private List<Category> _categoryData;
+        private List<Supplier> _supplierData;
 
         [SetUp]
         public void Setup()
@@ -31,12 +35,40 @@ namespace Northwind.Tests.Controllers
                 new Product { ProductID = 2, ProductName = "Chang", SupplierID = 2, CategoryID = 1, Discontinued = false }
             }.AsQueryable().ToList();
 
+            // Setup initial category data
+            _categoryData = new List<Category>
+            {
+                new Category { CategoryID = 1, CategoryName = "Beverages" },
+                new Category { CategoryID = 2, CategoryName = "Condiments" }
+            }.AsQueryable().ToList();
+
+            // Setup initial supplier data
+            _supplierData = new List<Supplier>
+            {
+                new Supplier { SupplierID = 1, CompanyName = "Supplier A" },
+                new Supplier { SupplierID = 2, CompanyName = "Supplier B" }
+            }.AsQueryable().ToList();
+
             // Create a mock of the DbSet<Product>
             _mockProducts = new Mock<DbSet<Product>>();
             _mockProducts.As<IQueryable<Product>>().Setup(m => m.Provider).Returns(_productData.AsQueryable().Provider);
             _mockProducts.As<IQueryable<Product>>().Setup(m => m.Expression).Returns(_productData.AsQueryable().Expression);
             _mockProducts.As<IQueryable<Product>>().Setup(m => m.ElementType).Returns(_productData.AsQueryable().ElementType);
             _mockProducts.As<IQueryable<Product>>().Setup(m => m.GetEnumerator()).Returns(_productData.AsQueryable().GetEnumerator());
+
+            // Create mock for DbSet<Category>
+            _mockCategories = new Mock<DbSet<Category>>();
+            _mockCategories.As<IQueryable<Category>>().Setup(m => m.Provider).Returns(_categoryData.AsQueryable().Provider);
+            _mockCategories.As<IQueryable<Category>>().Setup(m => m.Expression).Returns(_categoryData.AsQueryable().Expression);
+            _mockCategories.As<IQueryable<Category>>().Setup(m => m.ElementType).Returns(_categoryData.AsQueryable().ElementType);
+            _mockCategories.As<IQueryable<Category>>().Setup(m => m.GetEnumerator()).Returns(_categoryData.AsQueryable().GetEnumerator());
+
+            // Create mock for DbSet<Supplier>
+            _mockSuppliers = new Mock<DbSet<Supplier>>();
+            _mockSuppliers.As<IQueryable<Supplier>>().Setup(m => m.Provider).Returns(_supplierData.AsQueryable().Provider);
+            _mockSuppliers.As<IQueryable<Supplier>>().Setup(m => m.Expression).Returns(_supplierData.AsQueryable().Expression);
+            _mockSuppliers.As<IQueryable<Supplier>>().Setup(m => m.ElementType).Returns(_supplierData.AsQueryable().ElementType);
+            _mockSuppliers.As<IQueryable<Supplier>>().Setup(m => m.GetEnumerator()).Returns(_supplierData.AsQueryable().GetEnumerator());
 
             // Setup mock for Add and Find methods
             _mockProducts.Setup(m => m.Add(It.IsAny<Product>())).Callback<Product>(p => _productData.Add(p));
@@ -45,6 +77,8 @@ namespace Northwind.Tests.Controllers
             // Create a mock of the NorthwindContext
             _mockContext = new Mock<NorthwindContext>(new DbContextOptions<NorthwindContext>());
             _mockContext.Setup(c => c.Products).Returns(_mockProducts.Object);
+            _mockContext.Setup(c => c.Categories).Returns(_mockCategories.Object);
+            _mockContext.Setup(c => c.Suppliers).Returns(_mockSuppliers.Object);
 
             // Mock IOptions<ProductSettings>
             _mockSettings = new Mock<IOptions<ProductSettings>>();

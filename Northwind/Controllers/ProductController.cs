@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Northwind.Data;
 using Northwind.Models;
-using System.Linq;
+using Northwind.Infrastructure.Attributes;
 
 public class ProductController : Controller
 {
@@ -17,6 +17,7 @@ public class ProductController : Controller
         _maxProducts = productSettings.Value.MaxProducts;
     }
 
+    [LogParameters(true)]
     public IActionResult Index()
     {
         var products = _context.Products
@@ -33,6 +34,7 @@ public class ProductController : Controller
         return View(products.ToList());
     }
 
+    [LogParameters(true)]
     public IActionResult Create()
     {
         ViewBag.Categories = new SelectList(_context.Categories, "CategoryID", "CategoryName");
@@ -41,6 +43,7 @@ public class ProductController : Controller
     }
 
     [HttpPost]
+    [LogParameters(true)]
     [ValidateAntiForgeryToken]
     public IActionResult Create(Product product)
     {
@@ -55,6 +58,7 @@ public class ProductController : Controller
         return View(product);
     }
 
+    [LogParameters(true)]
     public IActionResult Edit(int id)
     {
         var product = _context.Products.Find(id);
@@ -68,6 +72,7 @@ public class ProductController : Controller
     }
 
     [HttpPost]
+    [LogParameters(true)]
     [ValidateAntiForgeryToken]
     public IActionResult Edit(Product product)
     {
