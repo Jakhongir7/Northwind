@@ -5,17 +5,16 @@ namespace Northwind.Middleware
     public class ImageCachingMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly ImageCachingOptions _options;
         private readonly ILogger<ImageCachingMiddleware> _logger;
+        private readonly ImageCachingOptions _options;
+        private readonly Dictionary<string, DateTime> _cacheTracker = new();
+        private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-        // Thread-safe dictionary to manage cached images
-        private readonly ConcurrentDictionary<string, CachedImageInfo> _cache = new();
-
-        public ImageCachingMiddleware(RequestDelegate next, ImageCachingOptions options, ILogger<ImageCachingMiddleware> logger)
+        public ImageCachingMiddleware(RequestDelegate next, ILogger<ImageCachingMiddleware> logger, ImageCachingOptions options)
         {
             _next = next;
-            _options = options;
             _logger = logger;
+            _options = options;
 
             // Ensure the cache directory exists
             if (!Directory.Exists(_options.CacheDirectory))
@@ -26,150 +25,108 @@ namespace Northwind.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Log that the middleware is processing a request
-            _logger.LogInformation("Processing request for path: {Path}", context.Request.Path);
-
-            // Check if the request is for an image that might already be cached
-            if (TryGetCachedImage(context, out var cachedFilePath))
-            {
-                // Return the cached image
-                _logger.LogInformation($"Serving cached image: {cachedFilePath}");
-                await ServeCachedImage(context, cachedFilePath);
-                return;
-            }
-
-            // Call the next middleware in the pipeline
-            var originalResponseStream = context.Response.Body;
+            // Before the response is sent, capture it to inspect and potentially cache images
+            var originalBodyStream = context.Response.Body;
             using var memoryStream = new MemoryStream();
             context.Response.Body = memoryStream;
 
+            // Proceed with the request pipeline
             await _next(context);
 
-            // Log the content type
-            _logger.LogInformation("Response Content-Type: {ContentType}", context.Response.ContentType);
-
-            // Restore original stream
-            memoryStream.Position = 0;
-            context.Response.Body = originalResponseStream;
-
-            // Check if the response is an image
-            var contentType = context.Response.ContentType;
-            if (IsValidImageContentType(contentType))
+            // Check if the content type is an image format
+            if (context.Response.ContentType != null && IsImageContentType(context.Response.ContentType))
             {
-                var imageBytes = memoryStream.ToArray();
+                var cacheKey = GetCacheKey(context.Request.Path);
 
-                // Cache the image if valid
-                var filePath = CacheImage(context, imageBytes);
-                if (filePath != null)
+                // Save the image to the cache if it doesn't already exist
+                if (!IsImageCached(cacheKey))
                 {
-                    _logger.LogInformation($"Image cached: {filePath}");
+                    await SaveImageToCache(cacheKey, memoryStream.ToArray());
+                    CleanExpiredCache();
                 }
+
+                // Write the response back to the original body
+                memoryStream.Position = 0;
+                await memoryStream.CopyToAsync(originalBodyStream);
             }
-
-            // Write the response back to the client
-            memoryStream.Position = 0;
-            await memoryStream.CopyToAsync(context.Response.Body);
+            else
+            {
+                // Write the response back to the original body if it's not an image
+                memoryStream.Position = 0;
+                await memoryStream.CopyToAsync(originalBodyStream);
+            }
         }
 
-        // Check if the content type is an image format we care about
-        private bool IsValidImageContentType(string contentType)
+        private bool IsImageContentType(string contentType)
         {
-            return contentType != null && (contentType.StartsWith("image/jpeg") || contentType.StartsWith("image/png") || contentType.StartsWith("image/bmp"));
+            // Check for common image content types
+            return contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
         }
 
-        // Cache the image to the file system
-        private string CacheImage(HttpContext context, byte[] imageBytes)
+        private string GetCacheKey(string path)
         {
-            // Generate a unique file name based on the request path
-            var fileName = Path.GetFileName(context.Request.Path) + ".cache";
-            var filePath = Path.Combine(_options.CacheDirectory, fileName);
+            // Generate a cache key based on the request path
+            return Path.GetFileName(path);
+        }
 
+        private bool IsImageCached(string cacheKey)
+        {
+            var cachePath = Path.Combine(_options.CacheDirectory, cacheKey);
+            return File.Exists(cachePath);
+        }
+
+        private async Task SaveImageToCache(string cacheKey, byte[] imageBytes)
+        {
+            await _semaphore.WaitAsync();
             try
             {
-                // Ensure we don't exceed the max count
-                if (_cache.Count >= _options.MaxCachedImages)
+                // Enforce max cached images count
+                if (Directory.GetFiles(_options.CacheDirectory).Length >= _options.MaxCachedImages)
                 {
-                    CleanupCache();
+                    CleanOldestCachedImage();
                 }
 
-                // Write the file to the cache directory
-                File.WriteAllBytes(filePath, imageBytes);
-
-                // Add the image to the cache dictionary
-                _cache[fileName] = new CachedImageInfo
-                {
-                    FilePath = filePath,
-                    LastAccessTime = DateTime.Now
-                };
-
-                return filePath;
+                var cachePath = Path.Combine(_options.CacheDirectory, cacheKey);
+                await File.WriteAllBytesAsync(cachePath, imageBytes);
+                _cacheTracker[cacheKey] = DateTime.UtcNow;
             }
-            catch (Exception ex)
+            finally
             {
-                _logger.LogError(ex, "Error caching image.");
-                return null;
+                _semaphore.Release();
             }
         }
 
-        // Serve a cached image
-        private async Task ServeCachedImage(HttpContext context, string filePath)
+        private void CleanExpiredCache()
         {
-            context.Response.ContentType = GetContentType(filePath);
-            var imageBytes = await File.ReadAllBytesAsync(filePath);
-            await context.Response.Body.WriteAsync(imageBytes, 0, imageBytes.Length);
-
-            // Update the last access time
-            var fileName = Path.GetFileName(filePath);
-            if (_cache.TryGetValue(fileName, out var cachedImage))
-            {
-                cachedImage.LastAccessTime = DateTime.Now;
-            }
-        }
-
-        // Check if the requested image is cached
-        private bool TryGetCachedImage(HttpContext context, out string cachedFilePath)
-        {
-            var fileName = Path.GetFileName(context.Request.Path) + ".cache";
-            cachedFilePath = Path.Combine(_options.CacheDirectory, fileName);
-
-            if (_cache.ContainsKey(fileName) && File.Exists(cachedFilePath))
-            {
-                return true;
-            }
-
-            cachedFilePath = null;
-            return false;
-        }
-
-        // Clean up old images from the cache if they haven't been accessed within the expiration time
-        private void CleanupCache()
-        {
-            var expiredItems = _cache
-                .Where(kvp => (DateTime.Now - kvp.Value.LastAccessTime) > _options.CacheExpiration)
+            var now = DateTime.UtcNow;
+            var expiredKeys = _cacheTracker
+                .Where(kvp => (now - kvp.Value) > _options.CacheExpiration)
+                .Select(kvp => kvp.Key)
                 .ToList();
 
-            foreach (var expiredItem in expiredItems)
+            foreach (var key in expiredKeys)
             {
-                if (File.Exists(expiredItem.Value.FilePath))
-                {
-                    File.Delete(expiredItem.Value.FilePath);
-                }
-
-                _cache.TryRemove(expiredItem.Key, out _);
+                DeleteCachedImage(key);
             }
         }
 
-        // Get content type based on file extension
-        private string GetContentType(string filePath)
+        private void CleanOldestCachedImage()
         {
-            var extension = Path.GetExtension(filePath).ToLowerInvariant();
-            return extension switch
+            var oldestKey = _cacheTracker.OrderBy(kvp => kvp.Value).FirstOrDefault().Key;
+            if (oldestKey != null)
             {
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                ".bmp" => "image/bmp",
-                _ => "application/octet-stream"
-            };
+                DeleteCachedImage(oldestKey);
+            }
+        }
+
+        private void DeleteCachedImage(string cacheKey)
+        {
+            var cachePath = Path.Combine(_options.CacheDirectory, cacheKey);
+            if (File.Exists(cachePath))
+            {
+                File.Delete(cachePath);
+                _cacheTracker.Remove(cacheKey);
+            }
         }
     }
 }

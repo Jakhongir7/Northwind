@@ -32,8 +32,19 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add<LoggingActionFilter>(); // Add the filter globally
 });
 
+// Create configuration options
+var imageCacheOptions = new ImageCachingOptions
+{
+    CacheDirectory = Path.Combine(builder.Environment.WebRootPath, "ImageCache"),
+    MaxCachedImages = 50, // Adjust max cached images count as needed
+    CacheExpiration = TimeSpan.FromMinutes(10) // Adjust expiration time as needed
+};
+
+// Register and use the middleware
+builder.Services.AddSingleton(imageCacheOptions);
+builder.Services.AddSingleton<ILogger<ImageCachingMiddleware>, Logger<ImageCachingMiddleware>>();
+
 var app = builder.Build();
-var env = builder.Environment;
 
 // Log application startup
 Log.Information("Application started. Location: {Location}", AppContext.BaseDirectory);
@@ -50,19 +61,11 @@ else
     app.UseDeveloperExceptionPage();  // Show detailed error page in development
 }
 
+// Add the custom middleware
+app.UseMiddleware<ImageCachingMiddleware>(imageCacheOptions);
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
-// Configure the ImageCachingMiddleware options
-var imageCacheOptions = new ImageCachingOptions
-{
-    CacheDirectory = Path.Combine(env.WebRootPath, "ImageCache"),
-    MaxCachedImages = 50, // Set your max cached images count
-    CacheExpiration = TimeSpan.FromMinutes(10) // Set your expiration time
-};
-
-// Add the custom middleware
-//app.UseMiddleware<ImageCachingMiddleware>(imageCacheOptions);
 
 app.UseRouting();
 app.UseAuthorization();
