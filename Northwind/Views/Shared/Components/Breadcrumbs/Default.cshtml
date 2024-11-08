@@ -1,0 +1,21 @@
+﻿@model Northwind.Components.BreadcrumbModel
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+
+        @if (!string.IsNullOrEmpty(Model.Entity))
+        {
+            <li class="breadcrumb-item">
+                <a href="/@Model.Entity">@Model.Entity</a>
+            </li>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.Action))
+        {
+            <li class="breadcrumb-item active" aria-current="page">
+                @Model.Action
+            </li>
+        }
+    </ol>
+</nav>

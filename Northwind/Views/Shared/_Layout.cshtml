@@ -1,4 +1,9 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString();
+    var actionName = ViewContext.RouteData.Values["action"]?.ToString();
+    var isHomePage = controllerName == "Home" && actionName == "Index";
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -35,6 +40,14 @@
                 </div>
             </div>
         </nav>
+        @if (!isHomePage)
+        {
+            @await Component.InvokeAsync("Breadcrumbs", new { entity = controllerName, action = actionName })
+        }
+        @RenderSection("Headers", required: false)
+        @section Headers {
+            <h1>Default Header Content</h1>
+        }
     </header>
     <div class="container">
         <main role="main" class="pb-3">
@@ -44,6 +57,10 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
+            @RenderSection("Footers", required: false)
+            @section Footers {
+                <p>Default Footer Content</p>
+            }
             &copy; 2024 - Northwind - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>

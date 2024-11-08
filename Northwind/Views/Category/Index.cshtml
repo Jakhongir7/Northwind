@@ -1,4 +1,5 @@
-﻿@model IEnumerable<Category>
+﻿@using Northwind.Helpers
+@model IEnumerable<Category>
 
 <h2>Categories</h2>
 
@@ -10,10 +11,8 @@
             <strong>Category Name:</strong> @category.CategoryName <br />
             @if (category.Picture != null)
             {
-                <a href="@Url.Action("GetCategoryImage", "Category", new { id = category.CategoryID })" target="_blank">
-                    <img src="@Url.Action("GetCategoryImage", "Category", new { id = category.CategoryID })"
-                         alt="@category.CategoryName" width="100" height="100" />
-                </a>
+                @Html.ImageLink(category.CategoryID.ToString(),
+                         $"<img src='/images/{category.CategoryID}' alt='{category.CategoryName}' width='100' height='100' />")
             }
             else
             {
@@ -24,3 +23,7 @@
         </li>
     }
 </ul>
+
+@section Footers {
+    <p style="color: red; font-weight: bold;">Warning: You cannot edit categories.</p>
+}
