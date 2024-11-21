@@ -30,7 +30,10 @@
                 <td>@(product.UnitsInStock ?? 0)</td>
                 <td>@product.Discontinued</td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@product.ProductID" class="btn btn-primary">Edit</a>
+                    <div class="d-flex gap-2">
+                        <a asp-action="Edit" asp-route-id="@product.ProductID" class="btn btn-primary">Edit</a>
+                        <a asp-action="Delete" asp-route-id="@product.ProductID" class="btn btn-danger">Delete</a>
+                    </div>
                 </td>
             </tr>
         }

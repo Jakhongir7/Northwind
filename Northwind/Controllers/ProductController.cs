@@ -86,4 +86,29 @@ public class ProductController : Controller
         ViewBag.Suppliers = new SelectList(_context.Suppliers, "SupplierID", "CompanyName", product.SupplierID);
         return View(product);
     }
+
+    [LogParameters(true)]
+    public IActionResult Delete(int id)
+    {
+        var product = _context.Products.Find(id);
+        if (product == null)
+        {
+            return NotFound();
+        }
+        return View(product);
+    }
+
+    [HttpPost]
+    [LogParameters(true)]
+    [ValidateAntiForgeryToken]
+    public IActionResult DeleteConfirmed(int id)
+    {
+        var product = _context.Products.Find(id);
+        if (product != null)
+        {
+            _context.Products.Remove(product);
+            _context.SaveChanges();
+        }
+        return RedirectToAction(nameof(Index));
+    }
 }
