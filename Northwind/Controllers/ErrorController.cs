@@ -17,6 +17,7 @@ namespace Northwind.Controllers
 
         [Route("Error")]
         [LogParameters(true)]
+        [HttpGet]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

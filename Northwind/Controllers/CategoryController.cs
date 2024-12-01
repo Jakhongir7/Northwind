@@ -23,6 +23,7 @@ namespace Northwind.Controllers
         // New Action to return category image
         [Route("images/{id}")]
         [LogParameters(true)]
+        [HttpGet]
         public IActionResult GetCategoryImage(int id)
         {
             var category = _context.Categories.FirstOrDefault(c => c.CategoryID == id);

@@ -33,14 +33,6 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add<LoggingActionFilter>(); // Add the filter globally
 });
 
-// Add NSwag services
-
-builder.Services.AddOpenApiDocument(config =>
-{
-    config.Title = "NorthWind Project";
-    config.Version = "v1";
-});
-
 // Create configuration options
 var imageCacheOptions = new ImageCachingOptions
 {
@@ -75,12 +67,6 @@ app.UseMiddleware<ImageCachingMiddleware>(imageCacheOptions);
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
-// Enable middleware to serve Swagger as a JSON endpoint
-app.UseOpenApi();
-
-// Enable middleware to serve Swagger UI
-app.UseSwaggerUi();
 
 app.UseRouting();
 app.UseAuthorization();
