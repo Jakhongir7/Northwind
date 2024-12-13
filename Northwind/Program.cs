@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Northwind.Data;
 using Northwind.Infrastructure.Filters;
 using Northwind.Middleware;
 using Northwind.Models;
+using Northwind.Services;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +23,16 @@ builder.Host.UseSerilog(); // Use Serilog for logging
 builder.Services.AddDbContext<NorthwindContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("NorthwindDb")));
 
+// Configure Identity
+builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+    .AddEntityFrameworkStores<NorthwindContext>()
+    .AddDefaultUI()
+    .AddDefaultTokenProviders();
+
+// Configure email sender for password reset (Dummy configuration for testing)
+builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
 // Register configuration section for product settings
 builder.Services.Configure<ProductSettings>(builder.Configuration.GetSection("ProductSettings"));
 
@@ -32,6 +45,11 @@ builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<LoggingActionFilter>(); // Add the filter globally
 });
+
+//builder.Services.AddRazorPages(options =>
+//{
+//    options.Conventions.AuthorizeAreaFolder("Identity", "/Account"); // Authorize access to Account pages
+//});
 
 // Create configuration options
 var imageCacheOptions = new ImageCachingOptions
@@ -69,6 +87,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
 app.UseEndpoints(endpoints =>
 {
@@ -78,5 +97,5 @@ app.UseEndpoints(endpoints =>
         pattern: "{controller=Home}/{action=Index}/{id?}"
     );
 });
-
+app.MapRazorPages();
 app.Run();

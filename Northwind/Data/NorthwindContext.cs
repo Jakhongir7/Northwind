@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Northwind.Models;
 
 namespace Northwind.Data
 {
-    public class NorthwindContext : DbContext
+    public class NorthwindContext : IdentityDbContext
     {
         public virtual DbSet<Product> Products { get; set; }
         public virtual DbSet<Supplier> Suppliers { get; set; }
@@ -16,6 +17,9 @@ namespace Northwind.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Category>().ToTable("Categories", t => t.ExcludeFromMigrations());
+            modelBuilder.Entity<Supplier>().ToTable("Suppliers", t => t.ExcludeFromMigrations());
+            modelBuilder.Entity<Product>().ToTable("Products", t => t.ExcludeFromMigrations());
         }
     }
 }
