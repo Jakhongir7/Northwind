@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -79,12 +78,7 @@ builder.Services.AddScoped<LoggingActionFilter>(provider =>
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<LoggingActionFilter>(); // Add the filter globally
-});
-
-//builder.Services.AddRazorPages(options =>
-//{
-//    options.Conventions.AuthorizeAreaFolder("Identity", "/Account"); // Authorize access to Account pages
-//});
+}).AddRazorRuntimeCompilation();
 
 // Create configuration options
 var imageCacheOptions = new ImageCachingOptions
@@ -142,8 +136,7 @@ app.UseEndpoints(endpoints =>
 app.MapRazorPages();
 app.Run();
 
-
-async Task CreateAdminRoleAsync(IServiceProvider serviceProvider)
+static async Task CreateAdminRoleAsync(IServiceProvider serviceProvider)
 {
     var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = serviceProvider.GetRequiredService<UserManager<IdentityUser>>();
